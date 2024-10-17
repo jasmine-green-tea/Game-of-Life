@@ -7,7 +7,11 @@ public class GridController : MonoBehaviour
     [SerializeField]
     private GameObject prefab;
     [SerializeField]
-    private uint gridSize;
+    [Range(10, 100)]
+    private int gridSize;
+    [SerializeField]
+    [Range(-30, -10)]
+    private int randNumber;
 
     [SerializeField]
     private float updatePeriod;
@@ -15,24 +19,29 @@ public class GridController : MonoBehaviour
 
     private bool[,] stateMatrix;
 
+    private List<bool[,]> matrixList;
+    private bool gameOver = false;
+    private int generationCount = 1;
+
     // Start is called before the first frame update
     void Start()
     {
         stateMatrix = new bool[gridSize, gridSize];
+        matrixList = new List<bool[,]>();
+        
 
         for (int i = 0; i < gridSize; i++)
         {
             for (int j = 0; j < gridSize; j++)
             {
-                int yCoord = Random.Range(-30, -7);
+                int yCoord = Random.Range(randNumber, -7);
                 if (yCoord == -8)
                     yCoord = 0;
                 else
                     yCoord = -10;
+
                 GameObject newCube = Instantiate(prefab, transform, false);
-
                 newCube.transform.Translate(new Vector3(i, yCoord, j));
-
 
                 if (yCoord == 0)
                     stateMatrix[i, j] = true;
@@ -45,31 +54,135 @@ public class GridController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (gameOver)
+            return;
         updateCounter += Time.deltaTime;
         if (updateCounter < updatePeriod)
             return;
         updateCounter = 0f;
-        Debug.LogError("tick");
 
-        // проходим по мертвым клеткам
-        // считаем кол-во соседей каждой мертвой клетки
-        // меняем статус клетки
-        // меняем координату кубика (поднимаем) или оставляем
+        bool[,] tempStateMatrix;
+        tempStateMatrix = new bool[gridSize, gridSize];
 
-        // проходим по живым клеткам
-        // считаем соседей
-        // меняем статус
-        // меняем коорд (опускаем) или оставляем
+        for (int i = 0; i < gridSize; i++)
+        {
+            for (int j = 0; j < gridSize; j++)
+            {
+                tempStateMatrix[i, j] = GetNewStatus(CountNeighbours(i, j), stateMatrix[i, j]);
+                if (!stateMatrix[i, j] && tempStateMatrix[i, j])
+                    transform.GetChild(i * gridSize + j).Translate(new Vector3(0, 10, 0));
+                else if (stateMatrix[i, j] && !tempStateMatrix[i, j])
+                    transform.GetChild(i * gridSize + j).Translate(new Vector3(0, -10, 0));
+            }
+        }
+        stateMatrix = tempStateMatrix;
+
+        if (FindExistingMatrix())
+            gameOver = true;
+
+        matrixList.Add(stateMatrix);
+
+        generationCount++;
     }
 
     private int CountNeighbours(int x, int z)
     {
-        return new int();
+        int neighbourCount = 0;
+
+        if (x > 0)
+        {
+            if (z > 0)
+            {
+                if (stateMatrix[x - 1, z - 1])
+                    neighbourCount++;
+            }
+            if (z < gridSize - 1)
+            {
+                if (stateMatrix[x - 1, z + 1])
+                    neighbourCount++;
+            }
+            if (stateMatrix[x - 1, z])
+                neighbourCount++;
+        }
+
+        if (x < gridSize - 1)
+        {
+            if (z > 0)
+            {
+                if (stateMatrix[x + 1, z - 1])
+                    neighbourCount++;
+            }
+            if (z < gridSize - 1)
+            {
+                if (stateMatrix[x + 1, z + 1])
+                    neighbourCount++;
+            }
+            if (stateMatrix[x + 1, z])
+                neighbourCount++;
+        }
+
+        if (z > 0 && stateMatrix[x, z - 1])
+            neighbourCount++;
+
+        if (z < gridSize - 1 && stateMatrix[x, z + 1])
+            neighbourCount++;
+
+        return neighbourCount;
     }
 
-    private bool GetNewStatus(int neighbourCount)
+    private bool GetNewStatus(int neighbourCount, bool oldStatus)
     {
-        return new bool();
+        bool newStatus;
+        if (oldStatus)
+        {
+            if (neighbourCount == 2 || neighbourCount == 3)
+                newStatus = true;
+            else
+                newStatus = false;
+        }
+        else
+        {
+            if (neighbourCount == 3)
+                newStatus = true;
+            else
+                newStatus = false;
+        }
+
+        return newStatus;
     }
 
+    private bool FindExistingMatrix()
+    {
+        foreach (bool[,] m in matrixList)
+            if (CompareMatrix(m, stateMatrix))
+                return true;
+
+        return false;
+    }
+
+    public bool IsGameOver()
+    {
+        return gameOver;
+    }
+
+    public int GetGenerationCount()
+    {
+        return generationCount;
+    }
+
+    private bool CompareMatrix(bool[,] l, bool[,] r)
+    {
+        for (int i = 0; i < gridSize; i++)
+        {
+            for (int j = 0; j < gridSize; j++)
+            {
+                if (l[i, j] != r[i, j])
+                    return false;
+            }
+        }
+
+
+
+        return true;
+    }
 }

@@ -10,7 +10,7 @@ public class GridController : MonoBehaviour
     [Range(10, 100)]
     private int gridSize;
     [SerializeField]
-    [Range(-30, -10)]
+    [Range(-30, -15)]
     private int randNumber;
 
     [SerializeField]

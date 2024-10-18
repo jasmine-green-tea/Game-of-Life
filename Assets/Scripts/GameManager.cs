@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -33,5 +34,10 @@ public class GameManager : MonoBehaviour
         gameOverScreen.SetActive(true);
         gameOverScreen.transform.GetChild(0).GetComponent<TMP_Text>().SetText("GAME OVER\n GENERATIONS: " + gridController.GetGenerationCount().ToString());
 
+    }
+
+    public void Restart()
+    {
+        SceneManager.LoadScene("GameOfLife");
     }
 }
